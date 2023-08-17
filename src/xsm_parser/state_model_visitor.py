@@ -1,4 +1,4 @@
-""" statemodel_visitor.py """
+""" state_model_visitor.py """
 
 from arpeggio import PTNodeVisitor
 from collections import namedtuple
@@ -17,7 +17,7 @@ Transition_p = namedtuple('Transition_p', 'event to_state')
 
 class StateModelVisitor(PTNodeVisitor):
     """Visit parsed units of an Executable UML State Model"""
-    # Each header comment below corresponds to section in statemodel.peg file
+    # Each header comment below corresponds to section in state_model.peg file
 
     # Elements
     def visit_nl(self, node, children):

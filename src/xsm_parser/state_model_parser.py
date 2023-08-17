@@ -1,12 +1,10 @@
-""" statemodel_parser.py – First attempt to parse class block """
+""" state_model_parser.py – First attempt to parse class block """
 
-from class_model_dsl.mp_exceptions import ModelGrammarFileOpen, ModelInputFileOpen, ModelInputFileEmpty
-from class_model_dsl.mp_exceptions import ModelParseError
-from class_model_dsl.parse.statemodel_visitor import StateModelVisitor
+from xsm_parser.exceptions import ModelGrammarFileOpen, ModelInputFileOpen, ModelInputFileEmpty, ModelParseError
+from xsm_parser.state_model_visitor import StateModelVisitor
 from arpeggio import visit_parse_tree, NoMatch
 from arpeggio.cleanpeg import ParserPEG
 from collections import namedtuple
-from class_model_dsl.parse.nocomment import nocomment
 import os
 from pathlib import Path
 
@@ -24,7 +22,7 @@ class StateModelParser:
         - model_grammar -- The model grammar text read from the system grammar file
         - model_text -- The input model text read from the user supplied text file
     """
-    grammar_file_name = "grammar/statemodel.peg"
+    grammar_file_name = "grammar/state_model.peg"
     grammar_file = Path(__file__).parent.parent / grammar_file_name
     root_rule_name = 'statemodel'  # We don't draw a diagram larger than a single subsystem
     xuml_model_dir = Path(__file__).parent.parent / "input"
@@ -41,13 +39,13 @@ class StateModelParser:
 
         # Read the grammar file
         try:
-            self.model_grammar = nocomment(open(StateModelParser.grammar_file, 'r').read())
+            self.model_grammar = open(StateModelParser.grammar_file, 'r').read()
         except OSError as e:
             raise ModelGrammarFileOpen(StateModelParser.grammar_file)
 
         # Read the model file
         try:
-            self.model_text = nocomment(open(self.model_file_path, 'r').read(), prefix='///')
+            self.model_text = open(self.model_file_path, 'r').read()
         except OSError as e:
             raise ModelInputFileOpen(self.model_file_path)
 
