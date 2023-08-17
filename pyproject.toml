@@ -1,0 +1,30 @@
+[build-system]
+requires      = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xsm-parser"
+version = "0.1.0"
+description = "Executable Shlaer-Mellor State Model Parser"
+readme = "README.md"
+authors = [{ name = "Leon Starr", email = "leon_starr@modelint.com" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["action language", "executable uml", "state model", "state machine", "mbse", "xuml", "xtuml", "platform independent", "sysml"]
+dependencies = ["Arpeggio", 'tomli; python_version < "3.11"']
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+build = ["build", "twine"]
+dev = ["bump2version", "pytest"]
+
+[project.scripts]
+xsm = "xsm_parser.__main__:main"
+
+[project.urls]
+repository    = "https://github.com/modelint/xsm-parser"
+documentation = "https://github.com/modelint/xsm-parser/wiki"

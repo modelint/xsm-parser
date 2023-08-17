@@ -1,0 +1,2 @@
+include src/xsm_parser/log.conf
+include src/xsm_parser/state_model.peg
