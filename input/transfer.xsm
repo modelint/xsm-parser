@@ -122,7 +122,6 @@ transitions
 --
 state CALL IN PROGRESS
 activity
-    // Floor call pending
 transitions
     Door closed > Canceling floor service
 --
