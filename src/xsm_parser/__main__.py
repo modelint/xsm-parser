@@ -31,7 +31,7 @@ def parse(cl_input):
     """
     parser = argparse.ArgumentParser(description=_progname)
     parser.add_argument('smfile', nargs='?', action='store',
-                        help='Class model file name with .xcm extension')
+                        help='State model file name with .xsm extension')
     parser.add_argument('-D', '--debug', action='store_true',
                         help='Debug mode'),
     parser.add_argument('-V', '--version', action='store_true',
