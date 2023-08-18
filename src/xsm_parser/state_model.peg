@@ -24,7 +24,7 @@ event_name = name
 
 // Initial transitions
 initial_transitions = it_header transition* block_end
-it_header = "initial transitions" nl
+it_header = "initial transitions" EOL*
 
 // State block
 state_block = state_header activity transitions? block_end

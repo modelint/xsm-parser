@@ -52,8 +52,8 @@ def main():
         print(f'{_progname} version: {version}')
         sys.exit(0)
 
-    if args.cmfile:
-        fpath = Path(args.cmfile)
+    if args.smfile:
+        fpath = Path(args.smfile)
         d = args.debug
         result = StateModelParser.parse_file(file_input=fpath, debug=d)
 
