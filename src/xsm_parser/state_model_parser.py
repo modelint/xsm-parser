@@ -1,14 +1,12 @@
 """ state_model_parser.py – First attempt to parse class block """
 
 from xsm_parser.exceptions import ModelGrammarFileOpen, ModelInputFileOpen, ModelInputFileEmpty, ModelParseError
-from xsm_parser.state_model_visitor import StateModelVisitor
+from xsm_parser.state_model_visitor import StateModelVisitor, StateModel_a
 from arpeggio import visit_parse_tree, NoMatch
 from arpeggio.cleanpeg import ParserPEG
-from collections import namedtuple
 import os
 from pathlib import Path
 
-StateModel = namedtuple('State_model', 'metadata domain lifecycle assigner initial_transitions events states')
 
 class StateModelParser:
     """
@@ -74,7 +72,7 @@ class StateModelParser:
         return cls.parse()
 
     @classmethod
-    def parse(cls) -> StateModel:
+    def parse(cls) -> StateModel_a:
         """
         Parse the model file and return the content
         :return:  The abstract syntax tree content of interest
@@ -113,22 +111,4 @@ class StateModelParser:
             # Comment this part out if you want to retain the dot files
             cls.parse_tree_dot.unlink(True)
 
-        # Return the refined model data, checking sequence length
-        metadata = result.results.get('metadata', None)  # Optional section
-        domain = result.results.get('domain_header')[0]
-        lifecycle = result.results.get('lifecycle')
-        lifecycle_class = None if not lifecycle else lifecycle[0]['class']
-        assigner = result.results.get('assigner')
-        assigner_rnum = None if not assigner else assigner[0]['rel']
-        events = result.results.get('events')
-        states = result.results.get('state_block')
-        itrans = result.results.get('initial_transitions')
-        return StateModel(
-            domain=domain,
-            lifecycle=lifecycle_class,
-            assigner=assigner_rnum,
-            events=[] if not events else events[0],
-            states=states,
-            initial_transitions=[] if not itrans else itrans[0],
-            metadata=None if not metadata else metadata[0]
-        )
+        return result

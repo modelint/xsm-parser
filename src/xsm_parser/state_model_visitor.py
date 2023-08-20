@@ -5,15 +5,17 @@ from collections import namedtuple
 
 # These named tuples help package up parsed data into meaningful chunks of state model content
 # To avoid a collision with any application tuple names, we append _p to indicate parser output
-StateBlock_p = namedtuple('StateBlock_p', 'state activity transitions')
+StateBlock_a = namedtuple('StateBlock_a', 'state activity transitions')
 """Parsed model data describing a state including its activity, optional creation event and optional exit transitions"""
-Parameter_p = namedtuple('Parameter_p', 'name type')
+Parameter_a = namedtuple('Parameter_a', 'name type')
 """Parsed name and data type of a parameter in a state model event signature"""
-StateSpec_p = namedtuple('StateSpec_p', 'name deletion signature')
+StateSpec_a = namedtuple('StateSpec_a', 'name deletion signature')
 """Parsed name of a real state, its type (deletion or non deletion) and state signature"""
-Transition_p = namedtuple('Transition_p', 'event to_state')
+Transition_a = namedtuple('Transition_a', 'event to_state')
 """Parsed transition with event and destination state"""
 
+StateModel_a = namedtuple('State_model_a', 'metadata domain lifecycle assigner initial_transitions events states')
+"""A complete statemodel result"""
 
 class StateModelVisitor(PTNodeVisitor):
     """Visit parsed units of an Executable UML State Model"""
@@ -23,7 +25,26 @@ class StateModelVisitor(PTNodeVisitor):
     @classmethod
     def visit_statemodel(cls, node, children):
         """ EOL* metadata? domain_header (lifecycle / assigner) events* initial_transitions* state_block* EOF """
-        return children
+
+        metadata = children.results.get('metadata', None)  # Optional section
+        domain = children.results.get('domain_header')[0]
+        lifecycle = children.results.get('lifecycle')
+        lifecycle_class = None if not lifecycle else lifecycle[0]['class']
+        assigner = children.results.get('assigner')
+        assigner_rnum = None if not assigner else assigner[0]['rel']
+        events = children.results.get('events', [])
+        states = children.results.get('state_block')
+        itrans = children.results.get('initial_transitions', [])
+
+        return StateModel_a(
+            domain=domain,
+            lifecycle=lifecycle_class,
+            assigner=assigner_rnum,
+            events=events if not events else events[0],
+            states=states,
+            initial_transitions=itrans if not itrans else itrans[0],
+            metadata=None if not metadata else metadata[0]
+        )
 
     # Metadata
     @classmethod
@@ -94,7 +115,7 @@ class StateModelVisitor(PTNodeVisitor):
         s = children[0]  # State info
         a = children[1]  # Activity (could be empty, but always provided)
         t = [] if len(children) < 3 else children[2]  # Optional transitions
-        sblock = StateBlock_p(state=s, activity=a, transitions=t)
+        sblock = StateBlock_a(state=s, activity=a, transitions=t)
         return sblock
 
     @classmethod
@@ -114,7 +135,7 @@ class StateModelVisitor(PTNodeVisitor):
         sig = []
         if deletion and clen == 3 or not deletion and clen == 2:
             sig = children[1]
-        return StateSpec_p(name=n, deletion=deletion, signature=sig)
+        return StateSpec_a(name=n, deletion=deletion, signature=sig)
 
     @classmethod
     def visit_signature(cls, node, children):
@@ -129,7 +150,7 @@ class StateModelVisitor(PTNodeVisitor):
     @classmethod
     def visit_parameter(cls, node, children):
         """ parameter_name SP? ':' SP? type_name """
-        return Parameter_p(name=children[0], type=children[1])
+        return Parameter_a(name=children[0], type=children[1])
 
     @classmethod
     def visit_parameter_name(cls, node, children):
@@ -161,7 +182,7 @@ class StateModelVisitor(PTNodeVisitor):
     @classmethod
     def visit_transition(cls, node, children):
         """ INDENT event_name (SP '>' SP state_name)? EOL* """
-        return Transition_p(event=children[0], to_state=None if len(children) < 2 else children[1])
+        return Transition_a(event=children[0], to_state=None if len(children) < 2 else children[1])
 
     @classmethod
     def visit_state_name(cls, node, children):
