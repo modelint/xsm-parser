@@ -81,9 +81,9 @@ class StateModelParser:
         """
         # Read the grammar file
         try:
-            cls.xsm_grammar = open(StateModelParser.grammar_file, 'r').read()
+            cls.xsm_grammar = open(cls.grammar_file, 'r').read()
         except OSError as e:
-            raise ModelGrammarFileOpen(StateModelParser.grammar_file)
+            raise ModelGrammarFileOpen(cls.grammar_file)
 
         # Create an arpeggio parser for our model grammar that does not eliminate whitespace
         # We interpret newlines and indents in our grammar, so whitespace must be preserved
