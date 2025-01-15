@@ -4,7 +4,7 @@ exceptions.py – Model parser specific exceptions
 
 # Every error should have the same format
 # with a standard prefix and postfix defined here
-pre = "\nClass model parser: ["
+pre = "\nState model parser: ["
 post = "]"
 
 
@@ -14,21 +14,6 @@ class MPException(Exception):
 class MDPopulationException(MPException):
     pass
 
-class MultipleDomainsException(MPException):
-    def __str__(self):
-        return f'{pre}Only one domain may be loaded at a time.{post}'
-
-class UnknownRelationshipType(MDPopulationException):
-    def __str__(self):
-        return f'{pre}Relationship is not a Generalization, Ordinal or Assocation.{post}'
-
-class CnumsExceeded(MDPopulationException):
-    def __init__(self, maxcnum):
-        self.maxcnum = maxcnum
-
-    def __str__(self):
-        return f'{pre}Exceeded maximum cnum {self.maxcnum} for subsystem. Adjust number range.{post}'
-
 class MismatchedStateSignature(MDPopulationException):
     def __init__(self, event, state):
         self.event = event
@@ -37,26 +22,8 @@ class MismatchedStateSignature(MDPopulationException):
     def __str__(self):
         return f'{pre}Event spec <{self.event}> on transition into state [{self.state}] has a different signature.{post}'
 
-class LnumsExceeded(MDPopulationException):
-    def __init__(self, maxlnum):
-        self.maxlnum = maxlnum
-
-    def __str__(self):
-        return f'{pre}Exceeded maximum lnum (lineage number) {self.maxlnum} for subsystem. Adjust number range.{post}'
-
-class LessThanTwoSubclassesInGeneralization(MDPopulationException):
-    def __init__(self, rnum):
-        self.rnum = rnum
-
-    def __str__(self):
-        return f'{pre}Generalization [{rnum}] requires at least two subclasses to form a minimal paritition.{post}'
-
 class MPIOException(MPException):
     pass
-
-class MPDBException(MPException):
-    pass
-
 
 class MPUserInputException(MPException):
     pass
