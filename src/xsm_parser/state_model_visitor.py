@@ -14,7 +14,8 @@ StateSpec_a = namedtuple('StateSpec_a', 'name deletion signature')
 Transition_a = namedtuple('Transition_a', 'event to_state')
 """Parsed transition with event and destination state"""
 
-StateModel_a = namedtuple('State_model_a', 'metadata domain lifecycle assigner initial_transitions events states')
+StateModel_a = namedtuple('State_model_a', 'metadata domain lifecycle assigner_rnum assigner_pclass '
+                                           'initial_transitions events states')
 """A complete statemodel result"""
 
 class StateModelVisitor(PTNodeVisitor):
@@ -32,6 +33,7 @@ class StateModelVisitor(PTNodeVisitor):
         lifecycle_class = None if not lifecycle else lifecycle[0]['class']
         assigner = children.results.get('assigner')
         assigner_rnum = None if not assigner else assigner[0]['rel']
+        assigner_pclass = None if not assigner else assigner[0].get('pclass')
         events = children.results.get('events', [])
         states = children.results.get('state_block')
         itrans = children.results.get('initial_transitions', [])
@@ -39,7 +41,8 @@ class StateModelVisitor(PTNodeVisitor):
         return StateModel_a(
             domain=domain,
             lifecycle=lifecycle_class,
-            assigner=assigner_rnum,
+            assigner_rnum=assigner_rnum,
+            assigner_pclass=assigner_pclass,
             events=events if not events else events[0],
             states=states,
             initial_transitions=itrans if not itrans else itrans[0],
@@ -82,8 +85,11 @@ class StateModelVisitor(PTNodeVisitor):
 
     @classmethod
     def visit_assigner(cls, node, children):
-        """ "relationship" SP rnum EOL* """
-        return {'rel': children[0] }
+        """ "relationship" SP rnum SP '/' SP name? EOL* """
+        item = {'rel': children[0] }
+        if len(children) == 2:
+            item['pclass'] = children[1]
+        return item
 
     # Events
     @classmethod

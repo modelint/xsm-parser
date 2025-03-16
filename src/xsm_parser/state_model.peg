@@ -14,7 +14,7 @@ text_item = ':' SP* r'.*' // Field content can be any text
 // Scope headers
 domain_header = "domain" SP name EOL*
 lifecycle = "class" SP name EOL*
-assigner = "relationship" SP rnum EOL*
+assigner = "relationship" SP rnum SP '/' SP name? EOL*
 
 // Events
 events = events_header event_spec* block_end
