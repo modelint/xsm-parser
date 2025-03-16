@@ -12,13 +12,13 @@ class Accessible Shaft Level
 events
     All requests cleared
     Stop request
-    Floor calling( dir: Direction )
+    Floor calling
     Floor call registered
     Stop registered
     Wait for service
     Opposite floor call pending
     Stop serviced
-    Serviced floor request( dir: Direction )
+    Serviced floor request
     Check stop request
 --
 state NOT REQUESTED
@@ -35,7 +35,7 @@ activity
 transitions
     Stop registered > Requesting service
 --
-state Registering floor call
+state Registering floor call( dir: Direction )
 activity
     *Floor Service( Direction: in.dir ) me, /R3/Bank Level
     Floor call registered -> me
@@ -75,7 +75,7 @@ transitions
     Opposite floor call pending > REQUESTED
     All requests cleared > NOT REQUESTED
 --
-state Clear floor request
+state Clear floor request( dir: Direction )
 activity
     Clear floor request( in.dir ) -> /R49/Bank Level
     !* /R49/Floor Service( Direction: in.dir )
