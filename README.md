@@ -1,6 +1,14 @@
 # Executable State Model Parser
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/modelint/xsm-parser/main/docs/images/xsm_parser.png"
+       alt="Parses an .xsm executable state model file into an abstract syntax tree for downstream Blueprint modules"
+       width="720">
+</p>
+
 Parses an *.xsm file (Executable State Model) to yield an abstract syntax tree using python named tuples
+
+> 📖 The xsm modeling language is fully documented in the [project wiki](https://github.com/modelint/xsm-parser/wiki).
 
 ### Why you need this
 
@@ -18,16 +26,19 @@ At this point you can invoke the parser via the command line or from your python
 
 You need this import statement at a minimum:
 
-    from xsm-parser.parser import StateModelParser
+    from xsm_parser.state_model_parser import StateModelParser
 
 You then specify a path as shown:
 
     result = StateModelParser.parse_file(file_input=path_to_file, debug=False)
 
-Check the code in `parser.py` to verify I haven't changed these parameters on you wihtout updating the readme.
+Check the code in `state_model_parser.py` to verify I haven't changed these parameters on you without updating the readme.
 
-In either case, `result` will be a list of parsed scrall statements. You may find the header of the `visitor.py`
-file helpful in interpreting these results.
+In either case, `result` will be a `StateModel_a` named tuple holding the parsed state model elements
+(`metadata`, `domain`, `lifecycle`, `assigner_rnum`, `assigner_pclass`, `initial_transitions`, `events`
+and `states`). A state model is either a class lifecycle or a relationship assigner, so either `lifecycle`
+or the `assigner_*` fields will be filled in, never both. You may find the header of the
+`state_model_visitor.py` file helpful in interpreting these results.
 
 #### From the command line
 
@@ -45,7 +56,7 @@ You can also specify a debug option like this:
 
     % xsm cabin.xsm -D
 
-This will create a diagnostics folder in your current working directory and deposit a couple of PDFs defining
-the parse of both the state model grammar: `state_model_tree.pdf` and your supplied text: `state_model.pdf`.
+This will create a `diagnostics` folder in your current working directory and deposit a couple of PDFs defining
+the parse of both the state model grammar: `state_model.pdf` and your supplied text: `state_parse_tree.pdf`.
 
-You should also see a file named `xsm-parser.log` in a diagnostics directory within your working directory
+You should also see a file named `xsm_parser.log` in your current working directory
