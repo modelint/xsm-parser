@@ -1,7 +1,7 @@
 # Executable State Model Parser
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/modelint/xsm-parser/main/docs/images/xsm_parser.png"
+  <img src="https://raw.githubusercontent.com/modelint/xsm-parser/main/docs/images/xsm_readme.png"
        alt="Parses an .xsm executable state model file into an abstract syntax tree for downstream Blueprint modules"
        width="720">
 </p>
