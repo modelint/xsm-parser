@@ -61,9 +61,15 @@ def matrix_events(sm):
 
 
 def dead_columns(sm):
-    """Events that no wait state answers, so their matrix column would be entirely blank."""
+    """
+    Events whose matrix column would be entirely blank, so they are dropped.
+
+    Only a completion event qualifies. An interaction event no wait state answers is not blank,
+    it is undecided in every one of them, and dropping the column would hide that.
+    """
     return [e for e in matrix_events(sm)
-            if all(e not in responses(s) for s in wait_states(sm))]
+            if e not in sm.interaction_events
+            and all(e not in responses(s) for s in wait_states(sm))]
 
 
 def undecided_responses(sm):

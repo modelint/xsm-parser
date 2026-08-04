@@ -242,10 +242,18 @@ class StateModelVisitor(PTNodeVisitor):
 
     @classmethod
     def visit_response(cls, node, children):
-        """ INDENT event_name EOL* explanation? """
-        event = children[0]
-        tag, text = (None, '') if len(children) < 2 else children[1]
-        return Response_a(event=event, tag=tag, explanation=text)
+        """
+        INDENT event_name (SP tag)? EOL* explanation?
+
+        A tag on the event line is the compact form of a reference to a reason defined
+        elsewhere, so it supplies a tag and no text. Explanatory text, whether it defines
+        a reusable reason or stands alone, arrives on the indented lines below.
+        """
+        event = children.results['event_name'][0]
+        inline_tag = children.results.get('tag')
+        explanation = children.results.get('explanation')
+        tag, text = (None, '') if not explanation else explanation[0]
+        return Response_a(event=event, tag=inline_tag[0] if inline_tag else tag, explanation=text)
 
     @classmethod
     def visit_explanation(cls, node, children):

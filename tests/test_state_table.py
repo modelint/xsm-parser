@@ -46,18 +46,47 @@ def test_completion_only_columns_are_dropped():
     assert "Passing floor" in header  # An interaction event a wait state does answer
 
 
-def test_undecided_responses_are_reported():
-    """A wait state that declares nothing for an interaction event leaves an open question"""
-    door = parse("door")
-    assert ("OPEN", "Hold released") in state_table.undecided_responses(door)
-    # Every cabin response has been decided
-    assert state_table.undecided_responses(parse("cabin")) == []
+# WAITING says nothing about Depart, which can arrive there, and nothing about Done, which cannot
+UNDECIDED_MODEL = """domain Test Domain
+class Thing
+interaction events
+    Arrive
+    Depart
+completion events
+    Done
+--
+state WAITING
+activity
+transitions
+    Arrive > Working
+--
+state Working
+activity
+    Done -> me
+transitions
+    Done > WAITING
+--
+"""
 
 
-def test_completion_event_absence_is_not_undecided():
-    """A completion event cannot arrive at all, so no wait state owes it a response"""
-    door = parse("door")
-    assert all(e in door.interaction_events for _, e in state_table.undecided_responses(door))
+def test_undecided_responses_are_reported(tmp_path):
+    """
+    A wait state that declares nothing for an interaction event leaves an open question,
+    while the same silence about a completion event is systematic and goes unreported.
+    """
+    source = tmp_path / "thing.xsm"
+    source.write_text(UNDECIDED_MODEL, encoding="utf-8")
+    result = StateModelParser.parse_file(file_input=source, debug=False)
+    assert state_table.undecided_responses(result) == [("WAITING", "Depart")]
+    text = state_table.page(result, "thing.xsm")
+    assert "| **WAITING** | **Working** | ? |" in text
+    assert "⚠️ 1 interaction event response has not been decided" in text
+
+
+@pytest.mark.parametrize("sm", state_machines)
+def test_every_shipped_model_is_fully_decided(sm):
+    """Every response in the elevator models has been considered and written down"""
+    assert state_table.undecided_responses(parse(sm)) == []
 
 
 def test_tag_reference_resolves_to_its_definition():

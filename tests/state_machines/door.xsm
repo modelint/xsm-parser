@@ -36,6 +36,9 @@ ignore
     Lock
         <Lock checked later> There’s nothing to do at this point, but we assume the lock attribute
         will be set and we will check it later, so the event info is not lost.
+    Hold released
+        <Release checked elsewhere> This condition is saved a the Hold attribute status and
+        checked in the HOLDING OPEN state.
 can't happen
     Door closed
         Door is opening, so it should not detect ‘closed’.
@@ -62,6 +65,8 @@ ignore
         <Already open so ignored> Door is already open, so this is ignored.
     Lock
         <Lock checked later>
+    Hold released
+        <Release checked elsewhere>
 can't happen
     Door opened
         <Already open> The door is already open.
@@ -115,6 +120,8 @@ ignore
         We’re already closing, so just ignore.
     Lock
         <Lock checked later>
+    Hold released
+        <Release checked elsewhere>
 can't happen
     Door opened
         If we are closing, there’s no way to become open.
@@ -136,6 +143,8 @@ transitions
 ignore
     Passenger close
         <Already closed so ignored> The door is already closed, so just ignore.
+    Hold released
+        <Release checked elsewhere>
 can't happen
     Door opened
         The door is closed and cannot instantaneously be open.
@@ -160,6 +169,8 @@ ignore
         The door is not safe to open in this state so the request is ignored.
     Passenger close
         <Already closed so ignored>
+    Hold released
+        <Release checked elsewhere>
 can't happen
     Door opened
         The whole point of this state is to ensure the door is not opened.
@@ -187,6 +198,9 @@ transitions
 state CANNOT CLOSE
 activity
     Take out of service -> /R4/Cabin
+ignore
+    Hold released
+        <Release checked elsewhere>
 can't happen
     Door opened
         <Shaft out of service> Presumably the shaft is out of service and no events will be

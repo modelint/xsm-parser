@@ -61,7 +61,9 @@ ignores = ignore_header response*
 ignore_header = "ignore" EOL*
 cant_happens = cant_happen_header response*
 cant_happen_header = "can't happen" EOL*
-response = INDENT event_name EOL* explanation?
+// A reference to a reason defined elsewhere carries no text of its own, so it may ride on the
+// event line. Any explanatory text goes on the indented lines below.
+response = INDENT event_name (SP tag)? EOL* explanation?
 explanation = expl_line+ // Free text, optionally opening with a reusable tag
 expl_line = INDENT INDENT tag? expl_text EOL
 expl_text = r'[^\n]*' // Explanatory text with no structure of its own

@@ -61,7 +61,7 @@ def test_event_used_for_completion_and_interaction_is_an_interaction_event():
 def test_ignore_and_cant_happen_sections():
     """Both non transition response sections are parsed and kept apart"""
     opening = state(parse("door"), "OPENING")
-    assert [r.event for r in opening.ignores] == ["Passenger open", "Lock"]
+    assert [r.event for r in opening.ignores] == ["Passenger open", "Lock", "Hold released"]
     assert [r.event for r in opening.cant_happens] == ["Door closed", "Door blocked", "Unlock", "Time to close"]
 
 
@@ -80,6 +80,15 @@ def test_tag_definition_carries_explanation():
     assert unlock.event == "Unlock"
     assert unlock.tag == "Cabin not moving"
     assert unlock.explanation.startswith("Cabin is not able to progress")
+
+
+def test_inline_tag_reference():
+    """A reference may ride on the event line, since it carries no text of its own"""
+    completed = state(parse("floor-service"), "COMPLETED")
+    assert [(r.event, r.tag, r.explanation) for r in completed.cant_happens] == [
+        ("Cabin arrived", "Transfer synch", ""),
+        ("Cancel", "Transfer synch", ""),
+    ]
 
 
 def test_tag_reference_has_no_explanation():
