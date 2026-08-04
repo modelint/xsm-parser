@@ -37,7 +37,7 @@ ignore
         <Lock checked later> There’s nothing to do at this point, but we assume the lock attribute
         will be set and we will check it later, so the event info is not lost.
     Hold released
-        <Release checked elsewhere> This condition is saved a the Hold attribute status and
+        <Release checked elsewhere> This condition is saved as the Hold attribute status and
         checked in the HOLDING OPEN state.
 can't happen
     Door closed
