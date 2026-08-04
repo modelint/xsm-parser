@@ -42,8 +42,8 @@ or the `assigner_*` fields will be filled in, never both. You may find the heade
 
 #### From the command line
 
-This is not the intended usage scenario, but may be helpful for testing or exploration. Since the parser
-may generate some diagnostic info you may want to create a fresh working directory and cd into it
+The `xsm` command checks a model file, and can render it as a table for reading and review. Since it
+may leave diagnostic output behind, you may want to create a fresh working directory and cd into it
 first. From there...
 
     % xsm cabin.xsm
@@ -61,8 +61,7 @@ the parse of both the state model grammar: `state_model.pdf` and your supplied t
 
 #### Generating a state transition table
 
-Unlike the options above, this one is meant for everyday use. Add `-t` to write a markdown page
-presenting the model as a table:
+Add `-t` to write a markdown page presenting the model as a table:
 
     % xsm cabin.xsm -t
 
