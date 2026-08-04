@@ -9,11 +9,12 @@ metadata
     Organization logo > mint
 domain Elevator Management
 relationship R53 / Shaft
-events
+interaction events
     Service requested
+    Transfer completed
+completion events
     No destination
     Transfer created
-    Transfer completed
     Dest change evaluated
 --
 state NO TRANSFER
@@ -21,6 +22,9 @@ activity
     // Waiting for service request
 transitions
     Service requested > Search for new destination
+can't happen
+    Transfer completed
+        There is no Transfer instance in this state, so one cannot complete.
 --
 state Search for new destination
 activity

@@ -2,7 +2,7 @@
 
 // State Model
 // In Executable UML a state model is either a lifecycle or an assigner
-statemodel = EOL* metadata? domain_header (lifecycle / assigner) events* initial_transitions* state_block* EOF
+statemodel = EOL* metadata? domain_header (lifecycle / assigner) events? initial_transitions* state_block* EOF
 
 // Metadata
 metadata = metadata_header data_item* // Header and set of metadata items
@@ -18,8 +18,17 @@ assigner = "relationship" SP rnum (SP '/' SP name)? EOL*
 // assigner = "relationship" SP rnum SP '/' SP name? EOL*
 
 // Events
-events = events_header event_spec* block_end
-events_header = "events" EOL*
+// Every event is declared once, under the header naming how it reaches a state machine.
+// An event is a completion event only if that is its sole use. One that can also arrive
+// from outside the state machine, even if some state also generates it, is an interaction
+// event. Classification is a property of the dispatch, so the broader use wins.
+// The two headers are sections of one events block, so a single block_end closes both,
+// just as one closes the transitions / ignore / can't happen sections of a state block.
+events = interaction_events? completion_events? block_end
+interaction_events = interaction_events_header event_spec*
+interaction_events_header = "interaction events" EOL*
+completion_events = completion_events_header event_spec*
+completion_events_header = "completion events" EOL*
 event_spec = INDENT event_name EOL*
 event_name = name
 
@@ -28,7 +37,7 @@ initial_transitions = it_header transition* block_end
 it_header = "initial transitions" EOL*
 
 // State block
-state_block = state_header activity transitions? block_end
+state_block = state_header activity transitions? ignores? cant_happens? block_end
 // state_header = "state" SP state_spec signature? nl
 state_header = "state" SP state_name signature? (SP DELETION)? EOL*
 //state_spec = state_name (SP DELETION)?
@@ -44,6 +53,19 @@ transitions = transition_header transition*
 transition_header = "transitions" EOL*
 transition = INDENT event_name (SP '>' SP state_name)? EOL*
 state_name = name
+
+// Non transition event responses
+// An event listed here is accepted and ignored, or declared impossible in this state.
+// Any declared event with no response at all defaults to can't happen.
+ignores = ignore_header response*
+ignore_header = "ignore" EOL*
+cant_happens = cant_happen_header response*
+cant_happen_header = "can't happen" EOL*
+response = INDENT event_name EOL* explanation?
+explanation = expl_line+ // Free text, optionally opening with a reusable tag
+expl_line = INDENT INDENT tag? expl_text EOL
+expl_text = r'[^\n]*' // Explanatory text with no structure of its own
+tag = '<' r'[^>\n]+' '>' SP*
 
 // Elements
 name = word (delim word)* r'\?'? // A name is a sequence of one or more words separated by delimiters with optional ?

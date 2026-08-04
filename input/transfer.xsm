@@ -9,23 +9,24 @@ metadata
     Organization logo > mint
 domain Elevator Management
 class Transfer
-events
+interaction events
     initial
     Execute
-    Wait for cabin
     Dest change request
     Ready to go
+    Cabin redirected
+    Cabin at destination
+    Requests cleared
+    Door closed
+completion events
+    Wait for cabin
     Cabin dispatched
     Stationary update
     Redirect requested
-    Cabin redirected
     Update in motion
-    Cabin at destination
     Reversal checked
     Call in progress
     Wait to clear
-    Requests cleared
-    Door closed
 --
 initial transitions
     initial > CREATED
@@ -35,6 +36,24 @@ activity
     // Created in this state
 transitions
     Execute > Creating or updating transfer
+ignore
+    Door closed
+        <Door closing not relevant yet> Doors may open and close while waiting to hear back
+        from the Cabin. But we don’t care about closing unless we are waiting for floor
+        service to expire after arrival.
+can't happen
+    Dest change request
+        Execute event is sent from same state of Shaft that creates the Transfer. This event
+        is also sent from Shaft, in a future state, so it will always be detected after
+        transitioning out of this state.
+    Cabin redirected
+        <Cabin not directed to move yet> Cabin hasn’t been directed to move yet.
+    Ready to go
+        Cabin hasn’t yet been directed to the state where this event would be sent.
+    Cabin at destination
+        <Cabin not directed to move yet>
+    Requests cleared
+        Transfer hasn’t directed that they be cleared yet.
 --
 state Creating or updating transfer
 activity
@@ -50,6 +69,22 @@ activity
 transitions
     Ready to go > Dispatching cabin
     Dest change request > Changing destination before cabin moves
+ignore
+    Door closed
+        <Door closing not relevant yet>
+can't happen
+    Execute
+        <Execute only from creating shaft state> Execute event is sent from same state of
+        Shaft that creates the Transfer. So this event can’t happen unless a whole new
+        Transfer is created.
+    Cabin redirected
+        Cabin hasn’t been requested to redirect.
+    Cabin at destination
+        The Cabin is stationary, so it can’t be arriving anywhere.
+    Requests cleared
+        <Requests not yet cleared> We haven’t yet tried to clear any stop or floor call
+        requests yet, and they can’t clear themselves alone. (Even an administration clear
+        would have to first delete this instance of transfer).
 --
 state Changing destination before cabin moves( new dest: Level Name )
 activity
@@ -74,6 +109,18 @@ transitions
     Dest change request > Request redirect
     Cabin redirected > Match new destination of cabin
     Cabin at destination > Check for cabin reversal
+can't happen
+    Execute
+        <Execute only from creating shaft state>
+    Ready to go
+        The Cabin has already reported this and cannot get back to a state where it can
+        report it again without direction from this instance of Transfer, which won’t
+        be triggered.
+    Door closed
+        The doors cannot be open when a cabin is moving. So, if we hear that they are
+        just closed in this state, something has gone very wrong!
+    Requests cleared
+        <Requests not yet cleared>
 --
 state Request redirect( new dest: Level Name )
 activity
@@ -124,6 +171,25 @@ state CALL IN PROGRESS
 activity
 transitions
     Door closed > Canceling floor service
+ignore
+    Dest change request
+        <Cannot redirect now> Shaft may have picked a destination, but we can’t go there
+        now. We will retrigger the search when this Transfer is deleted, so there is no
+        danger of missing a request.
+can't happen
+    Execute
+        <Execute only from creating shaft state>
+    Cabin redirected
+        <Cabin not moving now> This event can only be sent from the cabin when it is
+        moving. But it can’t be moving in this state.
+    Ready to go
+        <Cabin has finished moving> This event can only be sent from the cabin just before
+        it begins moving. And it can’t advance beyond that without direction from this
+        instance. At this point the cabin has finished moving.
+    Cabin at destination
+        <Cabin already arrived> The cabin has already arrived.
+    Requests cleared
+        <Requests not yet cleared>
 --
 state Canceling floor service
 activity
@@ -137,6 +203,21 @@ activity
     // Requests still pending
 transitions
     Requests cleared > Delete
+ignore
+    Dest change request
+        <Cannot redirect now>
+    Door closed
+        Not likely to happen, but we just don’t care at this point. There is no critical
+        synchronization with the door once the call in progress has been canceled.
+can't happen
+    Execute
+        <Execute only from creating shaft state>
+    Cabin redirected
+        <Cabin not moving now>
+    Ready to go
+        <Cabin has finished moving>
+    Cabin at destination
+        <Cabin already arrived>
 --
 state Delete !*
 activity

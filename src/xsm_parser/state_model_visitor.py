@@ -5,8 +5,15 @@ from collections import namedtuple
 
 # These named tuples help package up parsed data into meaningful chunks of state model content
 # To avoid a collision with any application tuple names, we append _p to indicate parser output
-StateBlock_a = namedtuple('StateBlock_a', 'state activity transitions')
-"""Parsed model data describing a state including its activity, optional creation event and optional exit transitions"""
+StateBlock_a = namedtuple('StateBlock_a', 'state activity transitions ignores cant_happens',
+                          defaults=((), ()))  # Empty tuples so the defaults cannot be mutated in place
+"""Parsed model data describing a state including its activity, optional creation event, optional exit transitions
+and the optional ignore / can't happen responses"""
+Response_a = namedtuple('Response_a', 'event tag explanation')
+"""Parsed non transition event response: the event, an optional reusable tag and the explanatory text.
+
+The tag is present when the explanation is either defining a reusable reason or referring to one defined
+elsewhere in the file. A reference supplies a tag with no explanation text of its own."""
 Parameter_a = namedtuple('Parameter_a', 'name type')
 """Parsed name and data type of a parameter in a state model event signature"""
 StateSpec_a = namedtuple('StateSpec_a', 'name deletion signature')
@@ -15,8 +22,14 @@ Transition_a = namedtuple('Transition_a', 'event to_state')
 """Parsed transition with event and destination state"""
 
 StateModel_a = namedtuple('State_model_a', 'metadata domain lifecycle assigner_rnum assigner_pclass '
-                                           'initial_transitions events states')
-"""A complete statemodel result"""
+                                           'initial_transitions events states '
+                                           'interaction_events completion_events',
+                          defaults=((), ()))
+"""A complete statemodel result.
+
+The events field holds every declared event in declaration order, interaction events first.
+The interaction_events and completion_events fields split that same set by how an event
+reaches the state machine."""
 
 class StateModelVisitor(PTNodeVisitor):
     """Visit parsed units of an Executable UML State Model"""
@@ -34,7 +47,7 @@ class StateModelVisitor(PTNodeVisitor):
         assigner = children.results.get('assigner')
         assigner_rnum = None if not assigner else assigner[0]['rel']
         assigner_pclass = None if not assigner else assigner[0].get('pclass')
-        events = children.results.get('events', [])
+        interaction, completion = children.results.get('events', [([], [])])[0]
         states = children.results.get('state_block')
         itrans = children.results.get('initial_transitions', [])
 
@@ -43,7 +56,9 @@ class StateModelVisitor(PTNodeVisitor):
             lifecycle=lifecycle_class,
             assigner_rnum=assigner_rnum,
             assigner_pclass=assigner_pclass,
-            events=events if not events else events[0],
+            events=interaction + completion,  # Every declared event, interaction events first
+            interaction_events=interaction,
+            completion_events=completion,
             states=states,
             initial_transitions=itrans if not itrans else itrans[0],
             metadata=None if not metadata else metadata[0]
@@ -94,7 +109,22 @@ class StateModelVisitor(PTNodeVisitor):
     # Events
     @classmethod
     def visit_events(cls, node, children):
-        """A list of event names"""
+        """
+        interaction_events? completion_events? block_end
+
+        Both sections are optional, so an absent one yields an empty list rather than nothing.
+        """
+        return (children.results.get('interaction_events', [[]])[0],
+                children.results.get('completion_events', [[]])[0])
+
+    @classmethod
+    def visit_interaction_events(cls, node, children):
+        """ interaction_events_header event_spec* block_end """
+        return list(children)
+
+    @classmethod
+    def visit_completion_events(cls, node, children):
+        """ completion_events_header event_spec* block_end """
         return list(children)
 
     @classmethod
@@ -117,11 +147,14 @@ class StateModelVisitor(PTNodeVisitor):
     # State block
     @classmethod
     def visit_state_block(cls, node, children):
-        """ state_header activity transitions? block_end """
+        """ state_header activity transitions? ignores? cant_happens? block_end """
         s = children[0]  # State info
         a = children[1]  # Activity (could be empty, but always provided)
-        t = [] if len(children) < 3 else children[2]  # Optional transitions
-        sblock = StateBlock_a(state=s, activity=a, transitions=t)
+        # The three response sections are each optional, so we pick them out by name rather than position
+        t = children.results.get('transitions', [[]])[0]
+        i = children.results.get('ignores', [[]])[0]
+        c = children.results.get('cant_happens', [[]])[0]
+        sblock = StateBlock_a(state=s, activity=a, transitions=t, ignores=i, cant_happens=c)
         return sblock
 
     @classmethod
@@ -195,6 +228,60 @@ class StateModelVisitor(PTNodeVisitor):
         """ name """
         name = ''.join(children)
         return name
+
+    # Non transition event responses
+    @classmethod
+    def visit_ignores(cls, node, children):
+        """ ignore_header response* """
+        return list(children)
+
+    @classmethod
+    def visit_cant_happens(cls, node, children):
+        """ cant_happen_header response* """
+        return list(children)
+
+    @classmethod
+    def visit_response(cls, node, children):
+        """ INDENT event_name EOL* explanation? """
+        event = children[0]
+        tag, text = (None, '') if len(children) < 2 else children[1]
+        return Response_a(event=event, tag=tag, explanation=text)
+
+    @classmethod
+    def visit_explanation(cls, node, children):
+        """
+        expl_line+
+
+        A leading tag on the first line, if any, labels the whole explanation. The remaining
+        text is joined into a single paragraph since the line breaks are only there to keep
+        the source file readable.
+        """
+        tag = None
+        lines = []
+        for i, c in enumerate(children):
+            line_tag, text = c
+            if i == 0:
+                tag = line_tag
+            if text:
+                lines.append(text)
+        return tag, ' '.join(lines)
+
+    @classmethod
+    def visit_expl_line(cls, node, children):
+        """ INDENT INDENT tag? expl_text EOL """
+        tag = children.results.get('tag')
+        text = children.results.get('expl_text')
+        return (None if not tag else tag[0]), ('' if not text else text[0].strip())
+
+    @classmethod
+    def visit_expl_text(cls, node, children):
+        """ r'[^\n]*' """
+        return node.value
+
+    @classmethod
+    def visit_tag(cls, node, children):
+        """ '<' r'[^>\n]+' '>' SP* """
+        return children[0].strip()
 
     # Elements
     @classmethod

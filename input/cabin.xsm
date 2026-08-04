@@ -2,29 +2,50 @@ metadata
     Title : Cabin State Machine Diagram
     Author : Leon Starr
     Document ID : mint.elevator3.td.6
-    Modification date : May 12, 2019
-    Version : 3.1.2
+    Modification date : February 5, 2026
+    Version : 3.5.2
     Organization : Model Integration, LLC
     Copyright notice > MIT
     Organization logo > mint
 domain Elevator Management
 class Cabin
-events
+interaction events
     Doors secure
-    Prepare to move
-    Already there
     New transfer
     Take out of service
     Arrived at floor
-    Change requested
+    Cabin stopping
     Try redirect
     Transport unavailable
     Go
+    Destination update
+    Passing floor
+completion events
+    Prepare to move
+    Already there
+    Change requested
+    Transport in progress
+    Transfer notified
+    Location updated
 --
-state Changing destination( new dest: Level Name )
+state Update location( floor: Level Name )
 activity
-    TRAN.Go to floor( Dest floor: ^new dest, Shaft ) ?
-         Cabin redirected( Updated dest: ^new dest ) -> /R53/Transfer
+    &R43 /R2/R28/Shaft Level(1, ^floor )
+    Passing floor( ^floor) -> ~UI
+    Location updated -> me
+transitions
+    Location updated > MOVING
+--
+state Notify transfer( new dest: Level Name )
+activity
+    Cabin redirected( updated dest: ^new dest ) -> /R53/Transfer
+    Transfer notified -> me
+transitions
+    Transfer notified > MOVING
+--
+state Request destination( new dest: Level Name )
+activity
+    Go to floor( dest floor: ^new dest ) -> ~TRANS
     Change requested -> me
 transitions
     Change requested > MOVING
@@ -32,23 +53,45 @@ transitions
 state READY TO GO
 activity
     Ready to go -> /R53/Transfer
-    Also do this -> Nowhere // for test only
 transitions
     Take out of service > OUT OF SERVICE
     Go > Requesting transport
+can't happen
+    Doors secure
+        Doors can’t get back to the state where they report this until we’ve gone through
+        another move cycle and have been locked again.
+    New transfer
+        <Transfer already exists> Transfer already exists and won’t be deleted until we get
+        through another move cycle.
+    Arrived at floor
+        <Cabin already stopped> Cabin is already stopped.
+    Try redirect
+        <No redirect until moving> We have a new Transfer and it can’t ask for a redirect
+        until we get moving again.
 --
 state SECURING DOORS
 activity
-    /R4/Door.Lock requested.set()
-    Lock -> /R4/Door
+    my door .= /R4/Door
+    my door.Lock requested.set
+    Lock -> my door
 transitions
     Doors secure > READY TO GO
     Take out of service > OUT OF SERVICE
+can't happen
+    New transfer
+        <Transfer already exists>
+    Arrived at floor
+        <Cabin already stopped>
+    Try redirect
+        <No redirect until moving>
+    Go
+        No, the whole point is to hold here until the transfer acknowledges that door is
+        in the Locked state and the cabin is stationary.
 --
-state Are we already there
+state Are we already there?
 activity
-    (/R53/Transfer.Destination floor == /R43/is at/Shaft Level/Floor) ?
-    Already there -> | Prepare to move -> me
+    /R53/Transfer.Destination floor == /R43/Shaft Level.Floor ?
+        Already there -> : Prepare to move -> me
 transitions
     Prepare to move > SECURING DOORS
     Already there > PICKUP DROPOFF
@@ -57,33 +100,85 @@ state PICKUP DROPOFF
 activity
     Cabin at destination -> /R53/Transfer
     Unlock -> /R4/Door
-    !(/R2/Shaft.In service) ? Take out of service -> me
+    ! /R2/Shaft.In service ? Take out of service -> me
 transitions
-    New transfer > Are we already there
+    New transfer > Are we already there?
+ignore
+    Try redirect
+        Possible if Transfer requests redirect just as arrival occurs. We can safely ignore
+        because when the Transfer completes it will trigger another search for service.
+can't happen
+    Doors secure
+        This only happens in response to lock requested in Securing Doors state. And we
+        don’t leave that state until the event happens.
+    Arrived at floor
+        <Cabin already stopped>
+    Go
+        Transfer can’t send this event until after we advance to the Locking Transfer state.
+--
+state Set emergency stop( nearest safe stop : Level Name)
+activity
+    Cabin redirected( updated dest: ^nearest safe stop) -> /R53/Transfer
+transitions
+    Arrived at floor > OUT OF SERVICE
 --
 state OUT OF SERVICE
 activity
     /R4/Door.Emergency hold.set
     Passenger open -> /R4/Door
+can't happen
+    Doors secure
+        <Out of service final state> Final state. Interacting instances should verify in
+        service status before sending any events.
+    New transfer
+        <Out of service final state>
+    Take out of service
+        <Out of service final state>
+    Arrived at floor
+        <Out of service final state>
+    Cabin stopping
+        <Out of service final state>
+    Try redirect
+        <Out of service final state>
+    Transport unavailable
+        <Out of service final state>
+    Go
+        <Out of service final state>
+    Destination update
+        <Out of service final state>
+    Passing floor
+        <Out of service final state>
 --
 state EMERGENCY BRAKING
 activity
-    Stop at nearest floor( Shaft ) => TRAN
+    Stop at nearest floor -> ~TRANS
 transitions
-    Arrived at floor > OUT OF SERVICE
+    Cabin stopping > Set emergency stop
 --
 state MOVING
 activity
-    // Cabin in motion
 transitions
     Take out of service > EMERGENCY BRAKING
     Arrived at floor > PICKUP DROPOFF
-    Try redirect > Changing destination
+    Try redirect > Request destination
+    Destination update > Notify transfer
+    Transport unavailable > OUT OF SERVICE
+    Passing floor > Update location
+can't happen
+    Doors secure
+        This is a serious ‘out of sync’ error. The doors must be secure (closed and locked)
+        while the cabin is moving.
+    New transfer
+        The transfer has already directed the cabin to move and it only does it once,
+        so it can’t happen again.
+    Go
+        The transfer has already directed us to go and it only does this once during
+        its lifecycle.
 --
 state Requesting transport
 activity
-    TRAN.Goto floor( Dest floor: /R53/Transfer.Destination floor, Shaft ) ?
-        Transport in progress -> | Transport unavailable -> me
+    Go to floor( dest floor: /R53/Transfer.Destination floor ) -> ~TRANS
+    Transport in progress -> me
 transitions
-    Transport unavailable > OUT OF SERVICE
+    Transport in progress > MOVING
 --

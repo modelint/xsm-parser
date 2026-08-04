@@ -9,16 +9,17 @@ metadata
     Organization logo > mint
 domain Elevator Application
 class Accessible Shaft Level
-events
-    All requests cleared
+interaction events
     Stop request
     Floor calling
+    Stop serviced
+    Serviced floor request
+completion events
+    All requests cleared
     Floor call registered
     Stop registered
     Wait for service
     Opposite floor call pending
-    Stop serviced
-    Serviced floor request
     Check stop request
 --
 state NOT REQUESTED
@@ -27,6 +28,12 @@ activity
 transitions
     Stop request > Registering stop
     Floor calling > Registering floor call
+can't happen
+    Stop serviced
+        <Only a requested aslev is serviced> Transfer only sends this signal to a requested
+        ASLEV. So, something is out of sync and horribly wrong if this happens.
+    Serviced floor request
+        <Only a requested aslev is serviced>
 --
 state Registering stop
 activity
@@ -54,7 +61,7 @@ activity
     // Desired dest for cabin
 transitions
     Stop request > Registering stop
-    Floor calling > Regsitering floor call
+    Floor calling > Registering floor call
     Stop serviced > Clear stop request
     Serviced floor request > Clear floor request
 --
