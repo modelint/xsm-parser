@@ -59,4 +59,33 @@ You can also specify a debug option like this:
 This will create a `diagnostics` folder in your current working directory and deposit a couple of PDFs defining
 the parse of both the state model grammar: `state_model.pdf` and your supplied text: `state_parse_tree.pdf`.
 
+#### Generating a state transition table
+
+Unlike the options above, this one is meant for everyday use. Add `-t` to write a markdown page
+presenting the model as a table:
+
+    % xsm cabin.xsm -t
+
+You get `cabin.md` next to `cabin.xsm`, or somewhere else if you say so:
+
+    % xsm cabin.xsm -t -o docs
+
+The page leads with a matrix of the wait states against the events, so you can see at a glance what
+each state does with each event. Below it, one section per state gives the reasoning behind every
+declared [ignore](https://github.com/modelint/xsm-parser/wiki/Ignore) and
+[can't happen](https://github.com/modelint/xsm-parser/wiki/Can't-Happen) response, with
+[reason tags](https://github.com/modelint/xsm-parser/wiki/Reason-tags) resolved to the text they
+stand for.
+
+Two things get flagged as you go. An event that no state answers at all is reported as a likely
+oversight. And a wait state that says nothing about an event that could actually arrive there is
+marked `?` in the table and counted on the command line:
+
+    % xsm door.xsm -t
+    Wrote door.md
+      6 interaction event response(s) not yet decided
+
+Such a response defaults to can't happen, but nobody has said why — which is worth knowing, since
+it is the difference between a case that was considered and one that was overlooked.
+
 You should also see a file named `xsm_parser.log` in your current working directory
