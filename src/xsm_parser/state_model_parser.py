@@ -61,7 +61,8 @@ class StateModelParser:
 
         # Read the state model file
         try:
-            cls.model_text = open(file_input, 'r').read() + '\n'
+            with open(file_input, 'r') as f:
+                cls.model_text = f.read() + '\n'
             # At least one newline at end simplifies grammar rules
         except OSError as e:
             raise ModelInputFileOpen(file_input)
@@ -79,7 +80,8 @@ class StateModelParser:
         """
         # Read the grammar file
         try:
-            cls.xsm_grammar = open(cls.grammar_file, 'r').read()
+            with open(cls.grammar_file, 'r') as f:
+                cls.xsm_grammar = f.read()
         except OSError as e:
             raise ModelGrammarFileOpen(cls.grammar_file)
 
