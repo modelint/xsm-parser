@@ -42,22 +42,28 @@ or the `assigner_*` fields will be filled in, never both. You may find the heade
 
 #### From the command line
 
-The `xsm` command checks a model file, and can render it as a table for reading and review. Since it
-may leave diagnostic output behind, you may want to create a fresh working directory and cd into it
-first. From there...
+The `xsm` command checks a model file, and can render it as a table for reading and review.
 
     % xsm cabin.xsm
+
+That says nothing and exits zero if the model parses. If it doesn't, you get the error and a non-zero
+exit. Run `xsm -h` for the full set of options.
 
 The .xsm extension is not necessary, but the file must contain xsm text. See this repository's wiki for
 more about the xsm language. The grammar is defined in the [state_model.peg](https://github.com/modelint/xsm-parser/blob/main/src/xsm_parser/state_model.peg) file. (if the link breaks after I do some update to the code, 
 just browse through the code looking for the state_model.peg file, and let me know so I can fix it)
 
-You can also specify a debug option like this:
+Two options leave diagnostic output behind in the current working directory, so you may want a scratch
+directory to run them from. A log of the run:
+
+    % xsm cabin.xsm -L
+
+writes `xsm_parser.log`. And the debug option:
 
     % xsm cabin.xsm -D
 
-This will create a `diagnostics` folder in your current working directory and deposit a couple of PDFs defining
-the parse of both the state model grammar: `state_model.pdf` and your supplied text: `state_parse_tree.pdf`.
+creates a `diagnostics` folder holding a couple of PDFs defining the parse of both the state model
+grammar, `state_model.pdf`, and your supplied text, `state_parse_tree.pdf`.
 
 #### Generating a state transition table
 
